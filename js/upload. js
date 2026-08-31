@@ -1,0 +1,182 @@
+import {
+  auth,
+  db,
+  storage
+} from "./firebase.js";
+
+import {
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+
+import {
+  ref,
+  uploadBytesResumable,
+  getDownloadURL
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-storage.js";
+
+import {
+  collection,
+  addDoc,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
+
+let currentUser = null;
+
+
+onAuthStateChanged(auth, user => {
+
+  currentUser = user;
+
+  if (!user) {
+
+    alert("पहले Login करें।");
+
+    location.href =
+      "login.html";
+
+  }
+
+});
+
+
+document
+  .getElementById("upload")
+  .onclick = async () => {
+
+    if (!currentUser) return;
+
+    const title =
+      document.getElementById("title")
+        .value.trim();
+
+    const description =
+      document.getElementById("description")
+        .value.trim();
+
+    const file =
+      document.getElementById("video")
+        .files[0];
+
+    const progress =
+      document.getElementById("progress");
+
+    if (!title) {
+
+      alert("Video title डालें");
+      return;
+
+    }
+
+    if (!file) {
+
+      alert("Video select करें");
+      return;
+
+    }
+
+    if (!file.type.startsWith("video/")) {
+
+      alert("सिर्फ video upload करें");
+      return;
+
+    }
+
+
+    const fileName =
+      Date.now() + "_" +
+      file.name.replace(
+        /[^a-zA-Z0-9._-]/g,
+        "_"
+      );
+
+
+    const storageRef =
+      ref(
+        storage,
+        `videos/${currentUser.uid}/${fileName}`
+      );
+
+
+    const task =
+      uploadBytesResumable(
+        storageRef,
+        file
+      );
+
+
+    task.on(
+
+      "state_changed",
+
+      snapshot => {
+
+        const percent =
+          Math.round(
+            snapshot.bytesTransferred /
+            snapshot.totalBytes *
+            100
+          );
+
+        progress.textContent =
+          `Uploading ${percent}%`;
+
+      },
+
+      error => {
+
+        console.error(error);
+
+        progress.textContent =
+          error.message;
+
+      },
+
+      async () => {
+
+        const url =
+          await getDownloadURL(
+            task.snapshot.ref
+          );
+
+
+        await addDoc(
+          collection(db, "videos"),
+          {
+            title,
+            description,
+            videoURL: url,
+            storagePath:
+              task.snapshot.ref.fullPath,
+
+            uid:
+              currentUser.uid,
+
+            creator:
+              currentUser.displayName ||
+              currentUser.email,
+
+            views: 0,
+            likes: 0,
+
+            createdAt:
+              serverTimestamp()
+          }
+        );
+
+
+        progress.textContent =
+          "✅ Video uploaded!";
+
+        setTimeout(() => {
+
+          location.href =
+            "index.html";
+
+        }, 1000);
+
+      }
+
+    );
+
+  };
