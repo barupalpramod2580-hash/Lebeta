@@ -1,0 +1,180 @@
+import {
+  auth,
+  db
+} from "./firebase.js";
+
+import {
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+
+import {
+  collection,
+  getDocs,
+  query,
+  where
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
+
+const profile =
+  document.getElementById("profile");
+
+const videos =
+  document.getElementById("videos");
+
+
+onAuthStateChanged(
+  auth,
+  async user => {
+
+    if (!user) {
+
+      location.href =
+        "login.html";
+
+      return;
+
+    }
+
+
+    profile.innerHTML = `
+
+      <h1>
+        ${escapeHTML(
+          user.displayName ||
+          "Lebeta User"
+        )}
+      </h1>
+
+      <p>
+        ${escapeHTML(user.email)}
+      </p>
+
+      <div class="stats">
+
+        <div class="stat">
+          <strong id="videoCount">0</strong>
+          Videos
+        </div>
+
+        <div class="stat">
+          <strong id="totalViews">0</strong>
+          Views
+        </div>
+
+        <div class="stat">
+          <strong id="totalLikes">0</strong>
+          Likes
+        </div>
+
+      </div>
+
+    `;
+
+
+    const q =
+      query(
+        collection(db, "videos"),
+        where(
+          "uid",
+          "==",
+          user.uid
+        )
+      );
+
+
+    const snapshot =
+      await getDocs(q);
+
+
+    let views = 0;
+    let likes = 0;
+
+
+    videos.innerHTML = "";
+
+
+    snapshot.forEach(item => {
+
+      const data =
+        item.data();
+
+      views +=
+        Number(data.views || 0);
+
+      likes +=
+        Number(data.likes || 0);
+
+
+      const card =
+        document.createElement("div");
+
+      card.className = "card";
+
+      card.innerHTML = `
+
+        <video
+          class="thumbnail"
+          src="${data.videoURL}"
+          muted>
+        </video>
+
+        <div class="card-body">
+
+          <div class="card-title">
+            ${escapeHTML(data.title)}
+          </div>
+
+          <div class="meta">
+            👁 ${data.views || 0}
+            • ❤️ ${data.likes || 0}
+          </div>
+
+        </div>
+
+      `;
+
+
+      card.onclick = () => {
+
+        location.href =
+          `watch.html?id=${item.id}`;
+
+      };
+
+
+      videos.appendChild(card);
+
+    });
+
+
+    document.getElementById(
+      "videoCount"
+    ).textContent =
+      snapshot.size;
+
+
+    document.getElementById(
+      "totalViews"
+    ).textContent =
+      views;
+
+
+    document.getElementById(
+      "totalLikes"
+    ).textContent =
+      likes;
+
+  }
+);
+
+
+function escapeHTML(text) {
+
+  return String(text)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+
+}
