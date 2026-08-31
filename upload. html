@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="hi">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Upload - Lebeta</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+<header>
+
+  <a class="logo" href="index.html">
+    Lebeta
+  </a>
+
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="dashboard.html">Dashboard</a>
+    <a href="profile.html">Profile</a>
+  </nav>
+
+</header>
+
+
+<div class="form-box">
+
+  <h1>Upload Video</h1>
+
+  <input
+    id="title"
+    placeholder="Video title"
+  >
+
+  <textarea
+    id="description"
+    placeholder="Description"
+  ></textarea>
+
+  <input
+    id="video"
+    type="file"
+    accept="video/*"
+  >
+
+  <button
+    id="upload"
+    class="primary full"
+  >
+    Upload Video
+  </button>
+
+  <div
+    id="progress"
+    class="progress"
+  ></div>
+
+</div>
+
+
+<script type="module" src="js/upload.js"></script>
+
+</body>
+</html>
