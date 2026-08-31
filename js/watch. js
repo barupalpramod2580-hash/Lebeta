@@ -1,0 +1,108 @@
+import {
+  db
+} from "./firebase.js";
+
+import {
+  doc,
+  getDoc,
+  updateDoc,
+  increment
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
+
+const id =
+  new URLSearchParams(
+    location.search
+  ).get("id");
+
+
+const container =
+  document.getElementById("watch");
+
+
+async function loadVideo() {
+
+  if (!id) {
+
+    container.innerHTML =
+      "Video नहीं मिला।";
+
+    return;
+
+  }
+
+
+  const videoRef =
+    doc(db, "videos", id);
+
+
+  const snapshot =
+    await getDoc(videoRef);
+
+
+  if (!snapshot.exists()) {
+
+    container.innerHTML =
+      "Video नहीं मिला।";
+
+    return;
+
+  }
+
+
+  const data =
+    snapshot.data();
+
+
+  await updateDoc(
+    videoRef,
+    {
+      views: increment(1)
+    }
+  );
+
+
+  container.innerHTML = `
+
+    <video
+      class="player"
+      src="${data.videoURL}"
+      controls
+      autoplay>
+    </video>
+
+    <h1>
+      ${escapeHTML(data.title)}
+    </h1>
+
+    <p class="meta">
+      By ${escapeHTML(data.creator || "Creator")}
+    </p>
+
+    <p style="margin-top:15px">
+      ${escapeHTML(data.description || "")}
+    </p>
+
+    <p class="meta">
+      👁 ${Number(data.views || 0) + 1} views
+      • ❤️ ${data.likes || 0}
+    </p>
+
+  `;
+
+}
+
+
+function escapeHTML(text) {
+
+  return String(text)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+
+}
+
+
+loadVideo();
